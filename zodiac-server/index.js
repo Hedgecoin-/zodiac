@@ -1,7 +1,35 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const app = express();
-const port = 3000;
+const bodyParser = require('body-parser');
 
-app.get('/', (req, res) => res.send('Hello world!'))
+const PORT = 3000;
 
-app.listen(port, () => console.log(`Example app listening on port ${port}`))
+app.use(bodyParser.json());
+
+const userRoutes = require('./routes/userRoutes');
+app.use('/user', userRoutes);
+
+
+
+// Database connection
+mongoose.connect('mongodb://localhost/test', { useNewUrlParser: true });
+const db = mongoose.connection;
+db.on('error', console.error.bind(console, 'connection error:'));
+db.once('open', () => {
+  console.log('Connected to database')
+});
+// End of database connection
+
+
+
+
+app.get('/', (req, res) => {
+  res.sendFile(__dirname + '/index.html')
+});
+
+
+app.listen(PORT, () => {
+  console.log('ZODIAC: Online')
+  console.log(`Listening on port ${PORT}`)
+});
