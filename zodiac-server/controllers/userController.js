@@ -1,33 +1,106 @@
 import db from '../models/dbconnection';
 
 class UserController {
+  static login(req, res) {
+    let username = req.body.username;
+    let password = req.body.password;
+
+    if (username && password) {
+      db.query(`SELECT * FROM users WHERE username = ? AND password = ?`, [username, password])
+        .then(result => {
+          if (result.length > 0) {
+            req.session.loggedIn = true;
+            req.session.username = username;
+            res.status(200).json({
+              username: username,
+              message: 'Logged in successfully'
+            });
+          }
+          else {
+            res.status(401).json({
+              error: 'Incorrect username and/or password'
+            });
+          }
+        })
+    }
+  }
+
   static getAllUsers(req, res) {
+    // if we're not logged in
+    let session = req.session;
+    if (!session.username) {
+      res.status(302).redirect('/user/login');
+      return;
+    }
 
     let users = [];
-
     db.query(`SELECT * FROM users;`)
       .then(rows => {
         users = rows;
       })
-      .then(() => db.close())
       .then(() => {
         return res.status(200).json(users)
       })
   }
 
-  // static getSingleUser(req, res) {
+  static register(req, res) {
+    let username = req.body.username;
+    let password = req.body.password;
 
+    if (username && password) {
+      db.query(`SELECT * FROM users WHERE username = ?`, [username])
+        .then(result => {
+          if (result.length === 0) {
+            return new Promise((resolve, reject) => {
+              db.query(`INSERT INTO users (username, password) VALUES (?, ?)`, [username, password])
+                .then(() => resolve(true))
+                .catch(() => reject(false))
+            });
+          }
+          return false;
+        })
+        .then(registered => {
+          if (registered) {
+            req.session.loggedIn = true;
+            req.session.username = username;
+            res.status(200).json({
+              username: username,
+              message: 'Registered and logged in successfully'
+            });
+          }
+          else {
+            res.status(409).json({
+              error: 'Username already exists'
+            });
+          }
+        });
+    }
+  }
 
-  //   const findUser = users.find(u => u.id === parseInt(req.params.id, 10));
-  //   if (findUser) {
-  //     return res.status(200).json({
-  //       user: findUser,
-  //       message: "A single user",
-  //     });
-  //   }
-  //   return res.status(404).json({
-  //     message: "User not found",
-  //   });
-  // }
+  static delete(req, res) {
+    let session = req.session;
+    let usernameToDelete = req.body.username;
+
+    // if we're not logged in
+    if (!session.username) {
+      res.status(302).redirect('/user/login');
+      return;
+    }
+
+    // if we forgot the username
+    if (!usernameToDelete) {
+      res.status(422).json({
+        message: "Missing username to delete"
+      });
+      return;
+    }
+
+    db.query(`DELETE FROM users WHERE (username = ?);`, [usernameToDelete])
+      .then(() => {
+        res.status(200).json({
+          message: "Success"
+        })
+      })
+  }
 }
 export default UserController;
