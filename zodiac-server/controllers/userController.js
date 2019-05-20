@@ -33,14 +33,15 @@ class UserController {
       return;
     }
 
-    let users = [];
     db.query(`SELECT * FROM users;`)
       .then(rows => {
-        users = rows;
+        res.status(200).json(rows)
       })
-      .then(() => {
-        return res.status(200).json(users)
-      })
+      .catch(err => {
+        res.status(500).json({
+          error: `Error getting all users ${err}`
+        });
+      });
   }
 
   static register(req, res) {
@@ -90,7 +91,7 @@ class UserController {
     // if we forgot the username
     if (!usernameToDelete) {
       res.status(422).json({
-        message: "Missing username to delete"
+        error: "Missing username to delete"
       });
       return;
     }

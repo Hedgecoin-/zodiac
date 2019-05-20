@@ -2,6 +2,7 @@
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import app from '../server';
+import db from '../models/dbconnection';
 
 chai.use(chaiHttp);
 chai.should();
@@ -13,10 +14,6 @@ const testUserCredentials = {
 const testUserCredentialsWrong = {
   username: "test",
   password: "wrong"
-}
-const registerTestUser = {
-  username: "unit",
-  password: "testword",
 }
 
 describe("User Controller Tests", () => {
@@ -62,50 +59,90 @@ describe("User Controller Tests", () => {
   });
 
   describe("POST /user/register", () => {
+    let registerTestUser = {
+      username: "unit register",
+      password: "123",
+    }
+
     it("should be able to add a new user", (done) => {
-      chai.request(app)
-        .post('/user/register')
-        .send(registerTestUser)
-        .end((err, res) => {
-          res.should.have.status(200);
-          res.body.should.be.a('object');
-          res.body.should.include.keys("username");
-          res.body.username.should.equal(registerTestUser.username);
-          done();
+      db.query(`SELECT * FROM users WHERE username = ?`, [registerTestUser.username])
+        .then(result => {
+          if (result.length > 0) {
+            return new Promise((resolve, reject) => {
+              db.query(`DELETE FROM users WHERE (username = ?)`, [registerTestUser.username])
+                .then(() => resolve())
+                .catch(() => reject());
+            });
+          }
+          return;
+        })
+        .then(() => {
+          chai.request(app)
+            .post('/user/register')
+            .send(registerTestUser)
+            .end((err, res) => {
+              res.should.have.status(200);
+              res.body.should.be.a('object');
+              res.body.should.include.keys("username");
+              res.body.username.should.equal(registerTestUser.username);
+              db.query(`DELETE FROM users WHERE (username = ?)`, [registerTestUser.username])
+                .then(() => {
+                  done();
+                })
+            });
         });
     });
   });
 
   describe("POST /user/delete", () => {
-    it("should be able to remove the new user", (done) => {
-      authenticatedUser
-        .post('/user/delete')
-        .send(registerTestUser)
-        .end((err, res) => {
-          res.should.have.status(200);
-          res.body.should.be.a('object');
-          res.body.should.include.keys("message");
-          done();
+    let deleteTestUser = {
+      username: "unit delete",
+      password: "123",
+    }
+
+    it("should be able to delete a user", (done) => {
+      db.query(`SELECT * FROM users WHERE username = ?`, [deleteTestUser.username])
+        .then(result => {
+          if (result.length === 0) {
+            return new Promise((resolve, reject) => {
+              db.query(`INSERT INTO users (username, password) VALUES (?, ?)`, [deleteTestUser.username, deleteTestUser.password])
+                .then(() => resolve())
+                .catch(() => reject())
+            });
+          }
+          return;
+        })
+        .then(() => {
+          authenticatedUser
+            .post('/user/delete')
+            .send(deleteTestUser)
+            .end((err, res) => {
+              res.should.have.status(200);
+              res.body.should.be.a('object');
+              res.body.should.include.keys("message");
+              done();
+            });
         });
-    })
+    });
 
     it("should redirect to login if not authenticated", (done) => {
       chai.request(app)
         .post('/user/delete')
         .redirects(0)
-        .send(registerTestUser)
+        .send(deleteTestUser)
         .end((err, res) => {
           res.should.have.status(302);
           res.headers.location.should.equal('/user/login');
           done();
         })
-    })
+    });
   });
 
   describe("GET /user/all", () => {
     it("should get all users", (done) => {
       authenticatedUser
         .get('/user/all')
+        .redirects(0)
         .end((err, res) => {
           res.should.have.status(200);
           res.body.should.be.a('array').that.is.not.empty;
