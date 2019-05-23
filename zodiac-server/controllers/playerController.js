@@ -109,6 +109,53 @@ class PlayerController {
       });
   }
 
+  static updatePlayer(req, res) {
+    let session = req.session;
+    if (!session.username) {
+      res.status(302).redirect('/user/login');
+      return;
+    }
+
+    let playerId = req.body.playerId;
+    let field = req.body.field;
+    let value = req.body.value;
+    if (!playerId || !field || !value) {
+      res.status(422).json({
+        error: "Missing parameters"
+      });
+      return;
+    }
+
+    db.query(`SELECT * FROM players WHERE id = ?`, [playerId])
+      .then(result => {
+        return new Promise((resolve, reject) => {
+          if (result.length === 1) {
+            resolve(result[0]);
+          }
+          else {
+            reject('Error finding player to update')
+          }
+        });
+      })
+      .then(queryPlayer => {
+        return new Promise((resolve, reject) => {
+          db.query(`UPDATE players SET ${field} = ? WHERE id = ?`, [queryPlayer[field] + value, playerId])
+            .then(() => resolve())
+            .catch(err => reject(err));
+        });
+      })
+      .then(() => {
+        res.status(200).json({
+          message: "Updated player"
+        });
+      })
+      .catch(err => {
+        res.status(500).json({
+          error: "Error: " + err
+        });
+      });
+  }
+
 }
 
 export default PlayerController;
