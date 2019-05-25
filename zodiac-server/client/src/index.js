@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 
 import { ThemeProvider } from '@material-ui/styles';
 import { SnackbarProvider } from 'notistack';
+import { CookiesProvider } from 'react-cookie';
 import UserProvider from './context/UserContext';
 
 import './index.css';
@@ -16,13 +17,15 @@ const theme = createMuiTheme({});
 
 ReactDOM.render(
   <BrowserRouter>
-    <ThemeProvider theme={theme}>
-      <SnackbarProvider maxSnack={3}>
-        <UserProvider>
-          <App />
-        </UserProvider>
-      </SnackbarProvider>
-    </ThemeProvider>
+    <CookiesProvider>
+      <ThemeProvider theme={theme}>
+        <SnackbarProvider maxSnack={3}>
+          <UserProvider>
+            <App />
+          </UserProvider>
+        </SnackbarProvider>
+      </ThemeProvider>
+    </CookiesProvider>
   </BrowserRouter>
   , document.getElementById('root')
 );

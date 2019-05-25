@@ -1,16 +1,42 @@
 import React, { Component } from 'react';
+import { withCookies } from 'react-cookie';
 
 const UserContext = React.createContext();
 
-
 class UserProvider extends Component {
+
   constructor(props) {
     super(props);
+    const { cookies } = props;
+
+    let userDetails = cookies.get('user') || {
+      userId: undefined,
+      username: undefined,
+      loggedIn: false,
+      moderator: false,
+    };
+
+    if (userDetails && userDetails.userId && userDetails.username) {
+      console.log(`Logged in as [${userDetails.userId}] ${userDetails.username}`);
+    }
+
     this.state = {
-      user: {
-        username: undefined,
-        loggedIn: false,
-        moderator: false,
+      user: userDetails,
+      players: [],
+      getRankings: () => {
+        return new Promise((resolve, reject) => {
+          fetch('/player/all')
+            .then(res => {
+              if (res.ok) {
+                return res.json();
+              }
+              else {
+                reject(res.json());
+              }
+            })
+            .then(data => this.setState({ players: data }, resolve(data)))
+            .catch(err => console.log(err));
+        });
       },
       login: (username, password) => {
         return new Promise((resolve, reject) => {
@@ -33,13 +59,16 @@ class UserProvider extends Component {
               }
             })
             .then(data => {
-              this.setState({
-                user: {
-                  username: data.username,
-                  loggedIn: true,
-                  moderator: data.moderator || false,
-                }
-              }, resolve(data.message));
+              const { cookies } = this.props;
+              let loggedInUser = {
+                userId: data.userId,
+                username: data.username,
+                loggedIn: true,
+                moderator: data.moderator || false,
+              }
+              console.log(`Logged in as [${loggedInUser.userId}] ${loggedInUser.username}`);
+              cookies.set('user', loggedInUser, { path: '/' });
+              this.setState({ user: loggedInUser }, resolve(data.message));
             })
         })
       }
@@ -55,14 +84,16 @@ class UserProvider extends Component {
   }
 }
 
-export default UserProvider;
+export default withCookies(UserProvider);
 
 export function withUserContext(WrappedComponent) {
   return class extends Component {
     render() {
       return (
         <UserContext.Consumer>
-          {context => <WrappedComponent user={context.user} login={context.login} {...this.props} />}
+          {context => <WrappedComponent
+            {...context}
+            {...this.props} />}
         </UserContext.Consumer>
       )
     }

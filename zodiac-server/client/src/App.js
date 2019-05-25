@@ -7,6 +7,7 @@ import Rankings from './pages/Rankings';
 import Spellbook from './pages/Spellbook';
 import { AppBar, Tabs, Tab } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
+import { withUserContext } from './context/UserContext';
 
 
 const useStyles = makeStyles(theme => ({
@@ -15,13 +16,16 @@ const useStyles = makeStyles(theme => ({
   }
 }))
 
-function App() {
+function App({ user }) {
   const classes = useStyles();
+  if (!user.loggedIn) {
+    return <Route component={Login} />
+  }
 
   return (
     <Route path='/' render={({ location }) => (
       <div className={classes.root}>
-        <AppBar position='static'>
+        <AppBar position='sticky'>
           <Tabs value={location.pathname} variant='fullWidth'>
             <Tab label='Rankings' value='/' component={Link} to='/' />
             <Tab label='Profile' value='/profile' component={Link} to='/profile' />
@@ -39,4 +43,4 @@ function App() {
     />
   )
 }
-export default App;
+export default withUserContext(App);
