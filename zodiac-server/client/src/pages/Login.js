@@ -1,38 +1,35 @@
 import React, { Component } from 'react';
-import { Header, Input, Button } from 'semantic-ui-react';
+import { withSnackbar } from 'notistack';
+import { Redirect } from 'react-router-dom';
+import { withUserContext } from '../context/UserContext';
 
 class Login extends Component {
   handleLogin = () => {
-    fetch(`/user/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        username: "test",
-        password: "test",
-      })
-    })
-      .then(res => {
-        if (res.ok) {
-          return res.json();
-        }
-      })
-      .then(data => {
-        console.log(data);
+    this.props.login('test', 'test')
+      .then(message => {
+        this.props.enqueueSnackbar(message);
+        console.log(message);
       })
   }
 
   render() {
+    const { user } = this.props;
+
+    if (user.loggedIn && user.username) {
+      return <Redirect to='/profile' />
+    }
+
     return (
       <div>
-        <Header as='h1'>Login</Header>
-        <Input placeholder='Username' />
-        <Input placeholder='Password' />
-        <Button onClick={this.handleLogin}>Login</Button>
+        <h1>Login</h1>
+        <input placeholder='Username' />
+        <input placeholder='Password' />
+        <button onClick={this.handleLogin}>Login</button>
       </div>
     );
   }
 }
 
-export default Login;
+export default
+  withUserContext(
+    withSnackbar(Login));
