@@ -162,6 +162,7 @@ describe("Player Controller Tests", () => {
     it("should increase score", (done) => {
       let field = 'score';
       let value = ((Math.random() * 10) - 5) | 0;
+      if (!value) value += 1;
       authenticatedUser
         .post('/player/update')
         .send({
@@ -190,6 +191,7 @@ describe("Player Controller Tests", () => {
     it("should increase level", (done) => {
       let field = 'level';
       let value = ((Math.random() * 10) - 5) | 0;
+      if (!value) value += 1;
       authenticatedUser
         .post('/player/update')
         .send({
@@ -218,6 +220,7 @@ describe("Player Controller Tests", () => {
     it("should increase experience", (done) => {
       let field = 'experience';
       let value = ((Math.random() * 10) - 5) | 0;
+      if (!value) value += 1;
       authenticatedUser
         .post('/player/update')
         .send({

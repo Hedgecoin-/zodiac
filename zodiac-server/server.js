@@ -8,7 +8,6 @@ import db from './models/dbconnection';
 const app = express();
 const port = process.env.PORT || 8000;
 
-
 // Configure app middleware
 const sessionStore = new mySqlStore({}, db.connection);
 app.use(session({

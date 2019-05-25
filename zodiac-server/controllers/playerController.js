@@ -1,4 +1,5 @@
 import db from '../models/dbconnection';
+import Pusher from 'pusher';
 
 class PlayerController {
   static createPlayer(req, res) {
@@ -140,7 +141,7 @@ class PlayerController {
       .then(queryPlayer => {
         return new Promise((resolve, reject) => {
           db.query(`UPDATE players SET ${field} = ? WHERE id = ?`, [queryPlayer[field] + value, playerId])
-            .then(() => resolve())
+            .then(() => resolve(queryPlayer))
             .catch(err => reject(err));
         });
       })

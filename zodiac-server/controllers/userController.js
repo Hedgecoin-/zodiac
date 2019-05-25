@@ -9,10 +9,13 @@ class UserController {
       db.query(`SELECT * FROM users WHERE username = ? AND password = ?`, [username, password])
         .then(result => {
           if (result.length > 0) {
+            let { username, id } = result[0];
             req.session.loggedIn = true;
             req.session.username = username;
+            req.session.userId = id;
             res.status(200).json({
               username: username,
+              userId: id,
               message: 'Logged in successfully'
             });
           }
